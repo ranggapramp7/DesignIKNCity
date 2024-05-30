@@ -4,7 +4,7 @@ import random
 
 # Ukuran peta
 MAP_SIZE = 150
-CELL_SIZE = 32  # Ukuran gambar per cell
+CELL_SIZE = 30  # Ukuran gambar per cell
 
 # Konstanta berbagai jenis jalan
 EMPTY = 0
@@ -14,45 +14,53 @@ SIMPANG = 'simpang'
 TIKUNGAN = 'tikungan'
 
 # Jumlah jenis jalan
-CROSSROAD_LIMIT = 9
-SIMPANG_LIMIT = 24
-TIKUNGAN_LIMIT = 32
+CROSSROAD_LIMIT = 8
+SIMPANG_LIMIT = 30
+TIKUNGAN_LIMIT = 22
 
 # Jarak minimal antar jalan
 MIN_DISTANCE = 5
 
 # Konstanta ukuran bangunan
-BIG_BUILDING = 'big_building'
-MEDIUM_BUILDING = 'medium_building'
+BIG_BUILDING_H = 'big_building_horizontal'
+BIG_BUILDING_V = 'big_building_vertical'
+MEDIUM_BUILDING_H = 'medium_building_horizontal'
+MEDIUM_BUILDING_V = 'medium_building_vertical'
 SMALL_BUILDING = 'small_building'
 HOUSE = 'house'
 TREE = 'tree'
 
-# Ukuran bangunan
-BUILDING_SIZES = {
-    BIG_BUILDING: (10, 5),
-    MEDIUM_BUILDING: (5, 3),
-    SMALL_BUILDING: (2, 2),
-    HOUSE: (1, 2),
-    TREE: (1, 1)
-}
-
 # Source images
 building_images = {
-    BIG_BUILDING: 'big_building.png',
-    MEDIUM_BUILDING: 'medium_building.png',
+    BIG_BUILDING_H: 'big_building_horizontal.png',
+    BIG_BUILDING_V: 'big_building_vertical.png',
+    MEDIUM_BUILDING_H: 'medium_building_horizontal.png',
+    MEDIUM_BUILDING_V: 'medium_building_vertical.png',
     SMALL_BUILDING: 'small_building.png',
     HOUSE: 'house.png',
-    TREE: 'tree.png'
+    TREE: 'tree.png',
+}
+
+# Ukuran bangunan
+BUILDING_SIZES = {
+    BIG_BUILDING_H: (5, 10),
+    BIG_BUILDING_V: (10, 5),
+    MEDIUM_BUILDING_H: (3, 5),
+    MEDIUM_BUILDING_V: (5, 3),
+    SMALL_BUILDING: (2, 2),
+    HOUSE: (1, 2),
+    TREE: (1, 1),
 }
 
 # Jumlah Bangunan
 BUILDING_MINIMUMS = {
-    BIG_BUILDING: 50,
-    MEDIUM_BUILDING: 120,
+    BIG_BUILDING_H: 20,
+    BIG_BUILDING_V: 20,
+    MEDIUM_BUILDING_H: 80,
+    MEDIUM_BUILDING_V: 40,
     SMALL_BUILDING: 270,
-    HOUSE: 530,
-    TREE: 600
+    HOUSE: 500,
+    TREE: 400,
 }
 
 class MapGenerator:
@@ -211,16 +219,18 @@ class MapDisplay(tk.Frame):
             'vertical_road': ImageTk.PhotoImage(Image.open("Source/vertical_road.png")),
             'horizontal_road': ImageTk.PhotoImage(Image.open("Source/horizontal_road.png")),
             'crossroad': ImageTk.PhotoImage(Image.open("Source/crossroad.png")),
-            'simpang_bawah': ImageTk.PhotoImage(Image.open("Source/simpang_bawah.png")),
-            'simpang_atas': ImageTk.PhotoImage(Image.open("Source/simpang_atas.png")),
-            'simpang_kanan': ImageTk.PhotoImage(Image.open("Source/simpang_kanan.png")),
-            'simpang_kiri': ImageTk.PhotoImage(Image.open("Source/simpang_kiri.png")),
             'kanan_atas': ImageTk.PhotoImage(Image.open("Source/kanan_atas.png")),
             'kanan_bawah': ImageTk.PhotoImage(Image.open("Source/kanan_bawah.png")),
             'kiri_bawah': ImageTk.PhotoImage(Image.open("Source/kiri_bawah.png")),
             'kiri_atas': ImageTk.PhotoImage(Image.open("Source/kiri_atas.png")),
-            BIG_BUILDING: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[BIG_BUILDING]}")),
-            MEDIUM_BUILDING: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[MEDIUM_BUILDING]}")),
+            'simpang_bawah': ImageTk.PhotoImage(Image.open("Source/simpang_bawah.png")),
+            'simpang_atas': ImageTk.PhotoImage(Image.open("Source/simpang_atas.png")),
+            'simpang_kanan': ImageTk.PhotoImage(Image.open("Source/simpang_kanan.png")),
+            'simpang_kiri': ImageTk.PhotoImage(Image.open("Source/simpang_kiri.png")),
+            BIG_BUILDING_H: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[BIG_BUILDING_H]}")),
+            BIG_BUILDING_V: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[BIG_BUILDING_V]}")),
+            MEDIUM_BUILDING_H: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[MEDIUM_BUILDING_H]}")),
+            MEDIUM_BUILDING_V: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[MEDIUM_BUILDING_V]}")),
             SMALL_BUILDING: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[SMALL_BUILDING]}")),
             HOUSE: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[HOUSE]}")),
             TREE: ImageTk.PhotoImage(Image.open(f"Source/decor/{building_images[TREE]}")),
@@ -247,10 +257,11 @@ class MapDisplay(tk.Frame):
         
         self.draw_map()
 
-        # Frame untuk tombol
-        self.button_frame = tk.Frame(self.main_frame)
-        self.button_frame.grid(row=0, column=2, padx=10, pady=10, sticky=tk.N)
-        self.redesign_button = tk.Button(self.button_frame, text="Re-design", command=self.redesign_map)
+        # Frame untuk tombol di bawah kanvas
+        self.button_frame = tk.Frame(self)
+        self.button_frame.pack(pady=10)
+
+        self.redesign_button = tk.Button(self.button_frame, text="Re-design", command=self.redesign_map, bg="blue", fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED, bd=5)
         self.redesign_button.pack()
 
     def draw_map(self):
@@ -286,7 +297,7 @@ class MapDisplay(tk.Frame):
 
 def main():
     root = tk.Tk()
-    root.title("Random Map Generator")
+    root.title("Design IKN City")
 
     map_generator = MapGenerator(MAP_SIZE)
     map_data = map_generator.get_map()
