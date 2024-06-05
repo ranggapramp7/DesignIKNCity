@@ -2,26 +2,25 @@ from PIL import Image, ImageTk
 import tkinter as tk
 import random
 
-# Ukuran peta
+# ukuran peta
 MAP_SIZE = 150
-CELL_SIZE = 30  # Ukuran gambar per cell
+CELL_SIZE = 10  # ukuran gambar per cell
 
-# Konstanta berbagai jenis jalan
+# konstanta berbagai jenis jalan
 EMPTY = 0
 ROAD = 'road'
 CROSSROAD = 'crossroad'
-SIMPANG = 'simpang'
 TIKUNGAN = 'tikungan'
+LAKE = 'lake'
 
-# Jumlah jenis jalan
+# jumlah jenis jalan
 CROSSROAD_LIMIT = 8
-SIMPANG_LIMIT = 30
 TIKUNGAN_LIMIT = 22
 
-# Jarak minimal antar jalan
+# jarak minimal antar jalan
 MIN_DISTANCE = 5
 
-# Konstanta ukuran bangunan
+# konstanta ukuran bangunan
 BIG_BUILDING_H = 'big_building_horizontal'
 BIG_BUILDING_V = 'big_building_vertical'
 MEDIUM_BUILDING_H = 'medium_building_horizontal'
@@ -30,7 +29,7 @@ SMALL_BUILDING = 'small_building'
 HOUSE = 'house'
 TREE = 'tree'
 
-# Source images
+# source images
 building_images = {
     BIG_BUILDING_H: 'big_building_horizontal.png',
     BIG_BUILDING_V: 'big_building_vertical.png',
@@ -39,9 +38,10 @@ building_images = {
     SMALL_BUILDING: 'small_building.png',
     HOUSE: 'house.png',
     TREE: 'tree.png',
+    LAKE: 'lake.png',
 }
 
-# Ukuran bangunan
+# ukuran bangunan
 BUILDING_SIZES = {
     BIG_BUILDING_H: (5, 10),
     BIG_BUILDING_V: (10, 5),
@@ -50,17 +50,18 @@ BUILDING_SIZES = {
     SMALL_BUILDING: (2, 2),
     HOUSE: (1, 2),
     TREE: (1, 1),
+    LAKE: (5, 5),  
 }
 
-# Jumlah Bangunan
+# jumlah Bangunan
 BUILDING_MINIMUMS = {
     BIG_BUILDING_H: 20,
-    BIG_BUILDING_V: 20,
-    MEDIUM_BUILDING_H: 80,
-    MEDIUM_BUILDING_V: 40,
-    SMALL_BUILDING: 270,
-    HOUSE: 500,
-    TREE: 400,
+    BIG_BUILDING_V: 25,
+    MEDIUM_BUILDING_H: 40,
+    MEDIUM_BUILDING_V: 30,
+    SMALL_BUILDING: 120,
+    HOUSE: 250,
+    TREE: 300,
 }
 
 class MapGenerator:
@@ -73,10 +74,9 @@ class MapGenerator:
         # Clear the map
         self.map = [[EMPTY for _ in range(self.size)] for _ in range(self.size)]
         crossroad_count = 0
-        simpang_count = 0
         tikungan_count = 0
 
-        while crossroad_count < CROSSROAD_LIMIT or simpang_count < SIMPANG_LIMIT or tikungan_count < TIKUNGAN_LIMIT:
+        while crossroad_count < CROSSROAD_LIMIT or tikungan_count < TIKUNGAN_LIMIT:
             x = random.randint(1, self.size - 2)
             y = random.randint(1, self.size - 2)
             if self.map[x][y] == EMPTY and self.is_location_valid(x, y):
@@ -87,29 +87,6 @@ class MapGenerator:
                     self.extend_road(x, y, 'left')
                     self.extend_road(x, y, 'right')
                     crossroad_count += 1
-                elif simpang_count < SIMPANG_LIMIT:
-                    direction = random.choice(['up', 'down', 'left', 'right'])
-                    if direction == 'up':
-                        self.map[x][y] = 'simpang_bawah'
-                        self.extend_road(x, y, 'up')
-                        self.extend_road(x, y, 'left')
-                        self.extend_road(x, y, 'right')
-                    elif direction == 'down':
-                        self.map[x][y] = 'simpang_atas'
-                        self.extend_road(x, y, 'down')
-                        self.extend_road(x, y, 'left')
-                        self.extend_road(x, y, 'right')
-                    elif direction == 'left':
-                        self.map[x][y] = 'simpang_kanan'
-                        self.extend_road(x, y, 'left')
-                        self.extend_road(x, y, 'up')
-                        self.extend_road(x, y, 'down')
-                    elif direction == 'right':
-                        self.map[x][y] = 'simpang_kiri'
-                        self.extend_road(x, y, 'right')
-                        self.extend_road(x, y, 'up')
-                        self.extend_road(x, y, 'down')
-                    simpang_count += 1
                 elif tikungan_count < TIKUNGAN_LIMIT:
                     direction = random.choice(['up-right', 'up-left', 'down-right', 'down-left'])
                     if direction == 'up-right':
@@ -130,6 +107,7 @@ class MapGenerator:
                         self.extend_road(x, y, 'left')
                     tikungan_count += 1
 
+        self.place_lake()
         self.place_buildings()
         self.place_trees()
 
@@ -161,6 +139,16 @@ class MapGenerator:
                 if self.map[x][j] != EMPTY:
                     break
                 self.map[x][j] = 'horizontal_road'
+
+    def place_lake(self):
+        while True:
+            x = random.randint(0, self.size - BUILDING_SIZES[LAKE][0])
+            y = random.randint(0, self.size - BUILDING_SIZES[LAKE][1])
+            if self.is_location_valid(x, y, BUILDING_SIZES[LAKE][0], BUILDING_SIZES[LAKE][1]):
+                for i in range(x, x + BUILDING_SIZES[LAKE][0]):
+                    for j in range(y, y + BUILDING_SIZES[LAKE][1]):
+                        self.map[i][j] = LAKE
+                break
 
     def place_buildings(self):
         for building, minimum in BUILDING_MINIMUMS.items():
@@ -196,7 +184,7 @@ class MapGenerator:
         road_found = False
         for i in range(max(0, x - 1), min(self.size, x + width + 1)):
             for j in range(max(0, y - 1), min(self.size, y + height + 1)):
-                if self.map[i][j] in ['vertical_road', 'horizontal_road', 'crossroad', 'simpang_bawah', 'simpang_atas', 'simpang_kanan', 'simpang_kiri', 'kiri_bawah', 'kanan_bawah', 'kiri_atas', 'kanan_atas']:
+                if self.map[i][j] in ['vertical_road', 'horizontal_road', 'crossroad', 'kiri_bawah', 'kanan_bawah', 'kiri_atas', 'kanan_atas']:
                     road_found = True
                 # Ensure a minimum distance of 2 cells from other buildings
                 if i in range(x, x + width) and j in range(y, y + height):
@@ -216,25 +204,22 @@ class MapDisplay(tk.Frame):
 
         # Load images
         self.images = {
-            'vertical_road': ImageTk.PhotoImage(Image.open("Source/vertical_road.png")),
-            'horizontal_road': ImageTk.PhotoImage(Image.open("Source/horizontal_road.png")),
-            'crossroad': ImageTk.PhotoImage(Image.open("Source/crossroad.png")),
-            'kanan_atas': ImageTk.PhotoImage(Image.open("Source/kanan_atas.png")),
-            'kanan_bawah': ImageTk.PhotoImage(Image.open("Source/kanan_bawah.png")),
-            'kiri_bawah': ImageTk.PhotoImage(Image.open("Source/kiri_bawah.png")),
-            'kiri_atas': ImageTk.PhotoImage(Image.open("Source/kiri_atas.png")),
-            'simpang_bawah': ImageTk.PhotoImage(Image.open("Source/simpang_bawah.png")),
-            'simpang_atas': ImageTk.PhotoImage(Image.open("Source/simpang_atas.png")),
-            'simpang_kanan': ImageTk.PhotoImage(Image.open("Source/simpang_kanan.png")),
-            'simpang_kiri': ImageTk.PhotoImage(Image.open("Source/simpang_kiri.png")),
-            BIG_BUILDING_H: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[BIG_BUILDING_H]}")),
-            BIG_BUILDING_V: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[BIG_BUILDING_V]}")),
-            MEDIUM_BUILDING_H: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[MEDIUM_BUILDING_H]}")),
-            MEDIUM_BUILDING_V: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[MEDIUM_BUILDING_V]}")),
-            SMALL_BUILDING: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[SMALL_BUILDING]}")),
-            HOUSE: ImageTk.PhotoImage(Image.open(f"Source/building_images/{building_images[HOUSE]}")),
-            TREE: ImageTk.PhotoImage(Image.open(f"Source/decor/{building_images[TREE]}")),
-            'grass': ImageTk.PhotoImage(Image.open("Source/grass.png"))  
+            'vertical_road': ImageTk.PhotoImage(Image.open("Source/road_img/vertical_road.png")),
+            'horizontal_road': ImageTk.PhotoImage(Image.open("Source/road_img/horizontal_road.png")),
+            'crossroad': ImageTk.PhotoImage(Image.open("Source/road_img/crossroad.png")),
+            'kanan_atas': ImageTk.PhotoImage(Image.open("Source/road_img/kanan_atas.png")),
+            'kanan_bawah': ImageTk.PhotoImage(Image.open("Source/road_img/kanan_bawah.png")),
+            'kiri_bawah': ImageTk.PhotoImage(Image.open("Source/road_img/kiri_bawah.png")),
+            'kiri_atas': ImageTk.PhotoImage(Image.open("Source/road_img/kiri_atas.png")),
+            BIG_BUILDING_H: ImageTk.PhotoImage(Image.open(f"Source/building_img/{building_images[BIG_BUILDING_H]}")),
+            BIG_BUILDING_V: ImageTk.PhotoImage(Image.open(f"Source/building_img/{building_images[BIG_BUILDING_V]}")),
+            MEDIUM_BUILDING_H: ImageTk.PhotoImage(Image.open(f"Source/building_img/{building_images[MEDIUM_BUILDING_H]}")),
+            MEDIUM_BUILDING_V: ImageTk.PhotoImage(Image.open(f"Source/building_img/{building_images[MEDIUM_BUILDING_V]}")),
+            SMALL_BUILDING: ImageTk.PhotoImage(Image.open(f"Source/building_img/{building_images[SMALL_BUILDING]}")),
+            HOUSE: ImageTk.PhotoImage(Image.open(f"Source/building_img/{building_images[HOUSE]}")),
+            TREE: ImageTk.PhotoImage(Image.open(f"Source/decor_img/{building_images[TREE]}")),
+            LAKE: ImageTk.PhotoImage(Image.open(f"Source/decor_img/{building_images[LAKE]}")),
+            'grass': ImageTk.PhotoImage(Image.open("Source/decor_img/grass.png"))  
         }
 
         # Frame untuk kanvas peta dan tombol
@@ -306,5 +291,5 @@ def main():
 
     root.mainloop()
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     main()
